@@ -1,0 +1,13 @@
+# Ignore compiled executables
+*.exe
+*.out
+
+# Ignore object files
+*.o
+
+# Ignore specific folders
+bin/
+build/
+.cph/
+dist/
+.vscode/
