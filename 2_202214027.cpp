@@ -45,9 +45,9 @@ class Priority_queue
     {
         bool leftPresence = isPresent(left(i)), rightPresence = isPresent(right(i));
         Node<T> ret = heap[i];
-        if (leftPresence && ret > heap[left(i)])
+        if (leftPresence && ret < heap[left(i)])
             ret = heap[left(i)];
-        if (rightPresence && ret > heap[right(i)])
+        if (rightPresence && ret < heap[right(i)])
             ret = heap[right(i)];
         return ret;
     }
