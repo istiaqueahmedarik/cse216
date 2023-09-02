@@ -5,7 +5,6 @@ class Heap
 protected:
     T *heap;
     unsigned long long heapSize, lastLeafIndex;
-    bool IsMaxHeap;
 
     void heapSizeMaintainer()
     {
@@ -24,16 +23,9 @@ protected:
 
     bool isPresent(unsigned long long i) { return i <= lastLeafIndex; }
 
-    T maxLimit() { return std::numeric_limits<T>::max(); }
     T minLimit() { return std::numeric_limits<T>::min(); }
 
-    bool HeapProperty(unsigned long long i) { return IsMaxHeap ? heap[parent(i)] >= heap[i] : heap[parent(i)] <= heap[i]; }
-
-    T getMinAmongParentAndChildren(unsigned long long i)
-    {
-        bool leftPresence = isPresent(left(i)), rightPresence = isPresent(right(i));
-        return std::min({heap[i], leftPresence ? heap[left(i)] : maxLimit(), rightPresence ? heap[right(i)] : maxLimit()});
-    }
+    bool HeapProperty(unsigned long long i) { return heap[parent(i)] >= heap[i]; }
 
     T getMaxAmongParentAndChildren(unsigned long long i)
     {
@@ -46,7 +38,7 @@ protected:
         if (!isPresent(i))
             return;
         bool leftPresence = isPresent(left(i)), rightPresence = isPresent(right(i));
-        T factor = IsMaxHeap ? getMaxAmongParentAndChildren(i) : getMinAmongParentAndChildren(i);
+        T factor = getMaxAmongParentAndChildren(i);
 
         if (factor == heap[i])
             return;
@@ -67,19 +59,12 @@ protected:
 
 public:
     // true means max heap and false means min heap
-    Heap(unsigned long long size = 2, bool IsMaxHeap = true) : heapSize(size), lastLeafIndex(0)
+    Heap(unsigned long long size = 2) : heapSize(size), lastLeafIndex(0)
     {
-        this->IsMaxHeap = IsMaxHeap;
         this->heap = new T[size];
-    }
-    Heap(bool IsMaxHeap) : heapSize(2), lastLeafIndex(0)
-    {
-        this->IsMaxHeap = IsMaxHeap;
-        this->heap = new T[2];
     }
     Heap(const Heap &h) : heapSize(h.heapSize), lastLeafIndex(h.lastLeafIndex)
     {
-        this->IsMaxHeap = h.IsMaxHeap;
         this->heap = new T[heapSize];
         for (unsigned long long i = 0; i <= lastLeafIndex; i++)
         {
@@ -98,7 +83,10 @@ public:
     T top()
     {
         if (lastLeafIndex == 0)
-            return IsMaxHeap ? maxLimit() : minLimit();
+        {
+            std::cerr << "empty" << std::endl;
+            throw std::runtime_error("empty!");
+        }
         return heap[1];
     }
     void build_heap()
@@ -107,22 +95,6 @@ public:
             down_hepify(i);
     }
 
-    void pop() { erase(1); }
-
-    void erase(unsigned long long idx)
-    {
-        if (idx > lastLeafIndex)
-        {
-            std::cerr << "Heap index out of range" << std::endl;
-            throw std::runtime_error("Heap index out of range");
-        }
-
-        std::swap(heap[idx], heap[lastLeafIndex--]);
-        if (IsMaxHeap)
-            (heap[lastLeafIndex + 1] > heap[idx]) ? down_hepify(idx) : up_heapify(idx);
-        else
-            (heap[lastLeafIndex + 1] < heap[idx]) ? down_hepify(idx) : up_heapify(idx);
-    }
     void print(std::ostream &os = std::cout)
     {
         for (unsigned long long i = 1; i <= lastLeafIndex; i++)
@@ -131,53 +103,21 @@ public:
     }
     unsigned long long size() { return lastLeafIndex; }
     bool empty() { return lastLeafIndex == 0; }
-    bool is_max_heap() { return IsMaxHeap; }
-    bool is_min_heap() { return !IsMaxHeap; }
-    void change_IsMaxHeap()
-    {
-        IsMaxHeap = !IsMaxHeap;
-        build_heap();
-    }
     void clear()
     {
         lastLeafIndex = 0;
         print();
     }
-    void sort()
-    {
-        int n = lastLeafIndex;
-        for (int i = 1; i <= n; i++)
-            erase(1);
-        lastLeafIndex = n;
-        print();
-        build_heap();
-    }
     T extractMax()
     {
-        if (is_min_heap())
+        if (lastLeafIndex == 0)
         {
-            change_IsMaxHeap();
-            T ret = top();
-            pop();
-            change_IsMaxHeap();
-            return ret;
+            std::cerr << "underflow" << std::endl;
+            throw std::underflow_error("underflow");
         }
-        T ret = top();
-        pop();
-        return ret;
-    }
-    T extractMin()
-    {
-        if (is_max_heap())
-        {
-            change_IsMaxHeap();
-            T ret = top();
-            pop();
-            change_IsMaxHeap();
-            return ret;
-        }
-        T ret = top();
-        pop();
+        T ret = heap[1];
+        heap[1] = heap[lastLeafIndex--];
+        down_hepify(1);
         return ret;
     }
 };
@@ -191,13 +131,36 @@ public:
     T top() { return Heap<T>::top(); }
     void pop() { Heap<T>::pop(); }
     T extractMax() { return Heap<T>::extractMax(); }
-    T extractMin() { return Heap<T>::extractMin(); }
+    void print() { Heap<T>::print(); }
 };
 int main()
 {
     Priority_queue<int> pq;
-    pq.push(5);
-    pq.push(3);
-    pq.push(4);
-    std::cout << pq.top() << std::endl;
+    while (1)
+    {
+        std::cout << "1: insert\n2: top\n3: extractMax\n4: print\n";
+        int choice;
+        std::cin >> choice;
+        if (choice == 1)
+        {
+            int x;
+            std::cout << "Value: ";
+            std::cin >> x;
+            pq.push(x);
+        }
+        else if (choice == 2)
+        {
+            std::cout << "Top: " << pq.top() << "\n";
+        }
+        else if (choice == 3)
+        {
+            std::cout << "Top: " << pq.extractMax() << "\n";
+        }
+        else if (choice == 4)
+        {
+            pq.print();
+        }
+        else
+            break;
+    }
 }

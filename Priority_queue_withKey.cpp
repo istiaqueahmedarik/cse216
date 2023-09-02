@@ -1,9 +1,23 @@
 #include <bits/stdc++.h>
-template <class T>
-class Heap
+template <class A>
+class Node
 {
-protected:
-    T *heap;
+public:
+    A value;
+    int priority;
+    Node(A value) : value(value), priority(0) {}
+    Node(A value = 0, int priority = 0) : value(value), priority(priority) {}
+    bool operator<(Node b) { return priority < b.priority; }
+    bool operator<=(Node b) { return priority <= b.priority; }
+    bool operator>(Node b) { return priority > b.priority; }
+    bool operator>=(Node b) { return priority >= b.priority; }
+    bool operator==(Node b) { return priority == b.priority; }
+};
+
+template <class T>
+class Priority_queue
+{
+    Node<T> *heap;
     unsigned long long heapSize, lastLeafIndex;
     bool IsMaxHeap;
 
@@ -11,7 +25,7 @@ protected:
     {
         if (heapSize > lastLeafIndex + 1)
             return;
-        T *temp_heap = new T[2 * heapSize];
+        Node<T> *temp_heap = new Node<T>[2 * heapSize];
         heapSize *= 2;
         for (unsigned long long i = 0; i <= lastLeafIndex; i++)
             temp_heap[i] = heap[i];
@@ -67,38 +81,33 @@ protected:
 
 public:
     // true means max heap and false means min heap
-    Heap(unsigned long long size = 2, bool IsMaxHeap = true) : heapSize(size), lastLeafIndex(0)
+    Priority_queue(unsigned long long size = 2, bool IsMaxHeap = true) : heapSize(size), lastLeafIndex(0)
     {
         this->IsMaxHeap = IsMaxHeap;
-        this->heap = new T[size];
+        this->heap = new Node<T>[size];
     }
-    Heap(bool IsMaxHeap) : heapSize(2), lastLeafIndex(0)
+    Priority_queue(bool IsMaxHeap) : heapSize(2), lastLeafIndex(0)
     {
         this->IsMaxHeap = IsMaxHeap;
-        this->heap = new T[2];
+        this->heap = new Node<T>[2];
     }
-    Heap(const Heap &h) : heapSize(h.heapSize), lastLeafIndex(h.lastLeafIndex)
+    Priority_queue(const Priority_queue &h) : heapSize(h.heapSize), lastLeafIndex(h.lastLeafIndex)
     {
         this->IsMaxHeap = h.IsMaxHeap;
-        this->heap = new T[heapSize];
+        this->heap = new Node<T>[heapSize];
         for (unsigned long long i = 0; i <= lastLeafIndex; i++)
-        {
             this->heap[i] = h.heap[i];
-        }
         build_heap();
     }
-    ~Heap() { delete[] heap; }
+    ~Priority_queue() { delete[] heap; }
 
-    void insert(T data)
-    {
-        heapSizeMaintainer();
-        heap[++lastLeafIndex] = data;
-        up_heapify(lastLeafIndex);
-    }
-    T top()
+    Node<T> top()
     {
         if (lastLeafIndex == 0)
-            return IsMaxHeap ? maxLimit() : minLimit();
+        {
+            std::cerr << "No element in priority queu" << std::endl;
+            throw std::runtime_error("Empty priority queue");
+        }
         return heap[1];
     }
     void build_heap()
@@ -107,22 +116,6 @@ public:
             down_hepify(i);
     }
 
-    void pop() { erase(1); }
-
-    void erase(unsigned long long idx)
-    {
-        if (idx > lastLeafIndex)
-        {
-            std::cerr << "Heap index out of range" << std::endl;
-            throw std::runtime_error("Heap index out of range");
-        }
-
-        std::swap(heap[idx], heap[lastLeafIndex--]);
-        if (IsMaxHeap)
-            (heap[lastLeafIndex + 1] > heap[idx]) ? down_hepify(idx) : up_heapify(idx);
-        else
-            (heap[lastLeafIndex + 1] < heap[idx]) ? down_hepify(idx) : up_heapify(idx);
-    }
     void print(std::ostream &os = std::cout)
     {
         for (unsigned long long i = 1; i <= lastLeafIndex; i++)
@@ -143,61 +136,66 @@ public:
         lastLeafIndex = 0;
         print();
     }
-    void sort()
-    {
-        int n = lastLeafIndex;
-        for (int i = 1; i <= n; i++)
-            erase(1);
-        lastLeafIndex = n;
-        print();
-        build_heap();
-    }
-    T extractMax()
+    Node<T> extractMax()
     {
         if (is_min_heap())
         {
-            change_IsMaxHeap();
-            T ret = top();
-            pop();
-            change_IsMaxHeap();
-            return ret;
+            std::cerr << "max_heap" << std::endl;
+            throw std::logic_error();
         }
-        T ret = top();
-        pop();
+        if (lastLeafIndex == 0)
+        {
+            std::cerr << "underflow" << std::endl;
+            throw std::underflow_error();
+        }
+        Node<T> ret = heap[1];
+        heap[1] = heap[lastLeafIndex--];
+        down_hepify(1);
         return ret;
     }
-    T extractMin()
+    Node<T> extractMin()
     {
         if (is_max_heap())
         {
-            change_IsMaxHeap();
-            T ret = top();
-            pop();
-            change_IsMaxHeap();
-            return ret;
+            std::cerr << "min_heap" << std::endl;
+            throw std::logic_error();
         }
-        T ret = top();
-        pop();
+        if (lastLeafIndex == 0)
+        {
+            std::cerr << "underflow" << std::endl;
+            throw std::underflow_error();
+        }
+        Node<T> ret = heap[1];
+        heap[1] = heap[lastLeafIndex--];
+        down_hepify(1);
         return ret;
     }
-};
-
-template <class T>
-class Priority_queue : Heap<T>
-{
-public:
-    Priority_queue(bool IsMaxHeap = true) : Heap<T>(IsMaxHeap) {}
-    void push(T data) { Heap<T>::insert(data); }
-    T top() { return Heap<T>::top(); }
-    void pop() { Heap<T>::pop(); }
-    T extractMax() { return Heap<T>::extractMax(); }
-    T extractMin() { return Heap<T>::extractMin(); }
+    void push(T data, int priority)
+    {
+        heapSizeMaintainer();
+        heap[++lastLeafIndex] = IsMaxHeap ? Node<T>(data, minLimit()) : Node<T>(data, maxLimit());
+        increase_key(lastLeafIndex, priority);
+    }
+    void increase_key(int idx, int priority)
+    {
+        if (IsMaxHeap and heap[idx].priority > priority)
+        {
+            std::cerr << "Given priority is smaller then previous" << std::endl;
+            throw std::runtime_error("Given priority is smaller then previous");
+        }
+        if (not IsMaxHeap and heap[idx].priority < priority)
+        {
+            std::cerr << "Given priority is greater then previous" << std::endl;
+            throw std::runtime_error("Given priority is greater then previous");
+        }
+        heap[idx].priority = priority;
+        up_heapify(idx);
+    }
 };
 int main()
 {
     Priority_queue<int> pq;
-    pq.push(5);
-    pq.push(3);
-    pq.push(4);
-    std::cout << pq.top() << std::endl;
+    pq.push(10, 5);
+    pq.push(2, 1);
+    std::cout << pq.top().value << std::endl;
 }
