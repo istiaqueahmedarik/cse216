@@ -128,7 +128,9 @@ int main()
     t.insert("h");
     t.insert("hell");
     t.insert("helloworld");
+    t.insert("hellows");
     bool ans = t.dlt("helloworld");
+    bool ansss = t.dlt("hellow");
     bool anss = t.search("hello");
     t.print();
 }
